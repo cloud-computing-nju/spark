@@ -24,6 +24,9 @@ public class MessageConsumer {
 
     private Thread t; //consumer thread
 
+    //output
+    Queue<ConsumerRecord<String,String>> outputQueue=new LinkedList<>();
+
     public MessageConsumer(){
         Properties props=new Properties();
         props.put("bootstrap.servers", ConsumerConfig.SERVER_ADDRESS);
@@ -54,8 +57,10 @@ public class MessageConsumer {
                     //enable auto-offset-commit
                     while (true) {
                         ConsumerRecords<String, String> records = consumer.poll(100);
-                        for (ConsumerRecord<String, String> record : records)
+                        for (ConsumerRecord<String, String> record : records){
                             System.out.printf("offset = %d, key = %s, value = %s", record.offset(), record.key(), record.value());
+                            that.outputQueue.offer(record);
+                        }
                     }
                 }else{
                     List<ConsumerRecord<String, String>> buffer = new ArrayList<>();
@@ -66,6 +71,7 @@ public class MessageConsumer {
                         }
                         if (buffer.size() >= minBatchSize) {
                             System.out.println("cache full");
+                            that.outputQueue.addAll(buffer);
                             consumer.commitSync();
                             buffer.clear();
                         }
@@ -92,6 +98,14 @@ public class MessageConsumer {
         else{
             return false;
         }
+    }
+
+    public ConsumerRecord<String,String> pollMessageFromQueue(){
+        return this.outputQueue.poll();
+    }
+
+    public int getMessageRemainsNum(){
+        return this.outputQueue.size();
     }
 
     public static void main(String[] args) {
