@@ -1,5 +1,6 @@
 package producer;
 
+import config.ProducerConfig;
 import org.apache.kafka.clients.producer.*;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
@@ -17,14 +18,14 @@ public class MessageProducer {
 
     public MessageProducer(){
         Properties props = new Properties();
-        props.put("bootstrap.servers", ProducerConfig.SERVER_ADDRESS);
-        props.put("acks", ProducerConfig.ACK);
-        props.put("retries", ProducerConfig.RETRIES);
-        props.put("batch.size", ProducerConfig.BATCH_SIZE);
-        props.put("linger.ms", ProducerConfig.LINGER_MS);
-        props.put("partitioner.class", ProducerConfig.PARTITIONER);
-        props.put("buffer.memory", ProducerConfig.BUFFER_MEMORY);
-        props.put("key.serializer", ProducerConfig.KEY_SERIALIZER);
+        props.put("bootstrap.servers", config.ProducerConfig.SERVER_ADDRESS);
+        props.put("acks", config.ProducerConfig.ACK);
+        props.put("retries", config.ProducerConfig.RETRIES);
+        props.put("batch.size", config.ProducerConfig.BATCH_SIZE);
+        props.put("linger.ms", config.ProducerConfig.LINGER_MS);
+        //props.put("partitioner.class", ProducerConfig.PARTITIONER);
+        props.put("buffer.memory", config.ProducerConfig.BUFFER_MEMORY);
+        props.put("key.serializer", config.ProducerConfig.KEY_SERIALIZER);
         props.put("value.serializer", ProducerConfig.VALUE_SERIALIZER);
         producer=new KafkaProducer<String, String>(props);
     }
@@ -60,7 +61,16 @@ public class MessageProducer {
             e.printStackTrace();
             response.setSuccess(false);
         }
-        return new Response();
+        return response;
+    }
+
+    public static void main(String[] args) {
+        MessageProducer producer=new MessageProducer();
+        Message message=new Message();
+        message.setTopic("TestTopic");
+        message.setValue("TestValue");
+        Response response=producer.sendMessageSync(message);
+        System.out.println(response.getResult("partition"));
     }
 
 }
