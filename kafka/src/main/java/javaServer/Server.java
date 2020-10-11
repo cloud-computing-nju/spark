@@ -3,7 +3,11 @@ package javaServer;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import config.ServerConfig;
+import consumer.MessageConsumer;
 import model.DataModel;
+import producer.Message;
+import producer.MessageProducer;
+import producer.Response;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -12,6 +16,15 @@ import java.nio.charset.StandardCharsets;
 
 public class Server {
     public static void main(String[] args) {
+        String topic="bilibili";
+
+        MessageConsumer messageConsumer=new MessageConsumer();
+        messageConsumer.subscribeTopics(topic);
+        messageConsumer.consumeMessage();
+
+        MessageProducer producer=new MessageProducer();
+
+
         try {
             ServerSocket serverSocket=new ServerSocket(ServerConfig.PORT);
             while(true){
@@ -24,13 +37,16 @@ public class Server {
                     requestDataBuilder.append(new String(bytes,0,len, StandardCharsets.UTF_8));
                 }
                 String requestData=requestDataBuilder.toString();
-                // gson 解析为java对象
-//                JsonReader jsonReader=new JsonReader(new StringReader(requestData));
-//                jsonReader.setLenient(true);
-                //System.out.println(requestData);
 
+                // gson 解析为java对象
                 Gson gson=new Gson();
                 DataModel dataModel=gson.fromJson(requestData,DataModel.class);
+
+                //producer将对象序列化后传给kafka
+                Message message=new Message();
+                message.setTopic(topic);
+                message.setValue(dataModel);
+                Response response=producer.sendMessageSync(message);
 
             }
 
@@ -38,5 +54,7 @@ public class Server {
             e.printStackTrace();
         }
     }
+
+
 
 }

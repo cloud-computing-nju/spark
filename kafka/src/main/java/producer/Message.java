@@ -1,11 +1,13 @@
 package producer;
 
+import model.DataModel;
+
 /**
  * 消息类
  */
 public class Message {
     private String topic=null;
-    private String value=null;
+    private DataModel value=null;
     public Message(){}
 
     public String getTopic() {
@@ -16,11 +18,11 @@ public class Message {
         this.topic = topic;
     }
 
-    public String getValue() {
+    public DataModel getValue() {
         return value;
     }
 
-    public void setValue(String value) {
+    public void setValue(DataModel value) {
         this.value = value;
     }
 }

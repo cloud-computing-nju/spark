@@ -2,10 +2,13 @@ package model;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.io.Serializable;
+import java.util.Arrays;
+
 /**
  * 爬虫数据结构
  */
-public class DataModel {
+public class DataModel implements Serializable {
     @SerializedName("pubdate")
     private long timeStamp; //发布时间
 
@@ -92,5 +95,19 @@ public class DataModel {
 
     public void setTags(String[] tags) {
         this.tags = tags;
+    }
+
+    @Override
+    public String toString() {
+        return "DataModel{" +
+                "timeStamp=" + timeStamp +
+                ", views=" + views +
+                ", danmaku=" + danmaku +
+                ", reply=" + reply +
+                ", favorite=" + favorite +
+                ", coins=" + coins +
+                ", like=" + like +
+                ", tags=" + Arrays.toString(tags) +
+                '}';
     }
 }

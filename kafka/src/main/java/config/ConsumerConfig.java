@@ -6,6 +6,6 @@ public class ConsumerConfig {
     public static boolean ENABLE_AUTO_COMMIT=true;
     public static int AUTO_COMMIT_INTERVAL=1000; //ms
     public static String KEY_DESERIALIZER="org.apache.kafka.common.serialization.StringDeserializer";
-    public static String VALUE_DESERIALIZER="org.apache.kafka.common.serialization.StringDeserializer";
+    public static String VALUE_DESERIALIZER="adapter.DataModelDecoder";
     public static int MIN_BATCH_SIZE=200;//cache buffer size
 }

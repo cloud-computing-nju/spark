@@ -1,11 +1,11 @@
 package consumer;
 
 import config.ConsumerConfig;
+import model.DataModel;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import producer.MessageProducer;
 
 import java.util.*;
 
@@ -15,7 +15,7 @@ import java.util.*;
 public class MessageConsumer {
 
     //实现消息消费的kafka内置类
-    private Consumer<String, String> consumer;
+    private Consumer<String, DataModel> consumer;
 
     //cache buffer size
     private final int minBatchSize;
@@ -25,7 +25,7 @@ public class MessageConsumer {
     private Thread t; //consumer thread
 
     //output
-    Queue<ConsumerRecord<String,String>> outputQueue=new LinkedList<>();
+    Queue<DataModel> outputQueue=new LinkedList<>();
 
     public MessageConsumer(){
         Properties props=new Properties();
@@ -41,7 +41,7 @@ public class MessageConsumer {
             this.minBatchSize=0;
             props.put("auto.commit.interval.ms", ConsumerConfig.AUTO_COMMIT_INTERVAL);
         }
-        consumer=new KafkaConsumer<String, String>(props);
+        consumer=new KafkaConsumer<String, DataModel>(props);
     }
 
     public void subscribeTopics(String... args){
@@ -56,22 +56,25 @@ public class MessageConsumer {
                 if(that.minBatchSize==0){
                     //enable auto-offset-commit
                     while (true) {
-                        ConsumerRecords<String, String> records = consumer.poll(100);
-                        for (ConsumerRecord<String, String> record : records){
-                            System.out.printf("offset = %d, key = %s, value = %s", record.offset(), record.key(), record.value());
-                            that.outputQueue.offer(record);
+                        ConsumerRecords<String, DataModel> records = consumer.poll(100);
+                        for (ConsumerRecord<String, DataModel> record : records){
+                            //System.out.printf("offset = %d, key = %s, value = %s", record.offset(), record.key(), record.value());
+                            System.out.println(record.value().toString());
+                            that.outputQueue.offer(record.value());
                         }
                     }
                 }else{
-                    List<ConsumerRecord<String, String>> buffer = new ArrayList<>();
+                    List<ConsumerRecord<String, DataModel>> buffer = new ArrayList<>();
                     while (true) {
-                        ConsumerRecords<String, String> records = consumer.poll(100);
-                        for (ConsumerRecord<String, String> record : records) {
+                        ConsumerRecords<String, DataModel> records = consumer.poll(100);
+                        for (ConsumerRecord<String, DataModel> record : records) {
                             buffer.add(record);
                         }
                         if (buffer.size() >= minBatchSize) {
                             System.out.println("cache full");
-                            that.outputQueue.addAll(buffer);
+                            for(ConsumerRecord<String,DataModel> record:buffer){
+                                that.outputQueue.add(record.value());
+                            }
                             consumer.commitSync();
                             buffer.clear();
                         }
@@ -79,11 +82,7 @@ public class MessageConsumer {
                 }
             }
         });
-//        try {
-//            t.join();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
+
         that.t=t;
         that.isOn=true;
         t.start();
@@ -100,7 +99,7 @@ public class MessageConsumer {
         }
     }
 
-    public ConsumerRecord<String,String> pollMessageFromQueue(){
+    public DataModel pollMessageFromQueue(){
         return this.outputQueue.poll();
     }
 
@@ -108,11 +107,5 @@ public class MessageConsumer {
         return this.outputQueue.size();
     }
 
-    public static void main(String[] args) {
 
-        MessageConsumer messageConsumer=new MessageConsumer();
-        messageConsumer.subscribeTopics("TestTopic");
-        messageConsumer.consumeMessage();
-        MessageProducer.main(args);
-    }
 }

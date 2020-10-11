@@ -10,8 +10,8 @@ public class ProducerConfig {
     public static int BATCH_SIZE=16384;
     public static int LINGER_MS=1;
     public static long BUFFER_MEMORY=33554432;
-    public static String PARTITIONER="com.example.kafka.producer.Partitioner";
+    public static String PARTITIONER="producer.Partitioner";
     public static String KEY_SERIALIZER="org.apache.kafka.common.serialization.StringSerializer";
-    public static String VALUE_SERIALIZER="org.apache.kafka.common.serialization.StringSerializer";
+    public static String VALUE_SERIALIZER="adapter.DataModelEncoder";
 
 }

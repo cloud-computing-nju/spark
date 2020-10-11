@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 消息返回结果类
+ * producer消息返回结果类
  */
 public class Response {
     private boolean success=false;

@@ -1,6 +1,7 @@
 package producer;
 
 import config.ProducerConfig;
+import model.DataModel;
 import org.apache.kafka.clients.producer.*;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
@@ -12,7 +13,7 @@ import java.util.concurrent.ExecutionException;
 public class MessageProducer {
 
     //实现消息传输的kafka内置类
-    private Producer<String, String> producer;
+    private Producer<String, DataModel> producer;
 
     private static MessageList messageList=MessageList.getInstance();
 
@@ -27,7 +28,7 @@ public class MessageProducer {
         props.put("buffer.memory", config.ProducerConfig.BUFFER_MEMORY);
         props.put("key.serializer", config.ProducerConfig.KEY_SERIALIZER);
         props.put("value.serializer", ProducerConfig.VALUE_SERIALIZER);
-        producer=new KafkaProducer<String, String>(props);
+        producer=new KafkaProducer<String, DataModel>(props);
     }
 
     /*
@@ -37,7 +38,7 @@ public class MessageProducer {
         String topic=message.getTopic();
         //key:=${topic}_i
         MessageProducer that=this;
-        this.producer.send(new ProducerRecord<String, String>(topic, topic.concat("_").concat(String.valueOf(MessageProducer.messageList.getMessageNum(message.getTopic()))), message.getValue()), new Callback() {
+        this.producer.send(new ProducerRecord<String, DataModel>(topic, topic.concat("_").concat(String.valueOf(MessageProducer.messageList.getMessageNum(message.getTopic()))), message.getValue()), new Callback() {
             @Override
             public void onCompletion(RecordMetadata recordMetadata, Exception e) {
                 callback.onCompletion(recordMetadata,e);
@@ -51,7 +52,7 @@ public class MessageProducer {
      */
     public Response sendMessageSync(Message message)  {
         String topic=message.getTopic();
-        ProducerRecord<String,String> record=new ProducerRecord<String, String>(topic, topic.concat("_").concat(String.valueOf(MessageProducer.messageList.getMessageNum(message.getTopic()))), message.getValue());
+        ProducerRecord<String, DataModel> record=new ProducerRecord<>(topic, topic.concat("_").concat(String.valueOf(MessageProducer.messageList.getMessageNum(message.getTopic()))), message.getValue());
         Response response=new Response();
         try {
             RecordMetadata result = producer.send(record).get();
@@ -62,15 +63,6 @@ public class MessageProducer {
             response.setSuccess(false);
         }
         return response;
-    }
-
-    public static void main(String[] args) {
-        MessageProducer producer=new MessageProducer();
-        Message message=new Message();
-        message.setTopic("TestTopic");
-        message.setValue("TestValue");
-        Response response=producer.sendMessageSync(message);
-        System.out.println(response.getResult("partition"));
     }
 
 }
