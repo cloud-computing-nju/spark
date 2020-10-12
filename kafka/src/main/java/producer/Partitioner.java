@@ -20,8 +20,6 @@ public class Partitioner implements org.apache.kafka.clients.producer.Partitione
         }
         //如果只有一个分区，即0号分区
         if (numPartitions == 1) {return 0;}
-        //如果key为name，发送至最后一个分区
-        if (key.equals("name")) {return numPartitions - 1;}
         return Math.abs(Utils.murmur2(keyBytes)) % (numPartitions - 1);
     }
 
