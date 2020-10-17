@@ -21,6 +21,7 @@ public class Server {
         MessageConsumer messageConsumer=new MessageConsumer();
         messageConsumer.subscribeTopics(topic);
         messageConsumer.consumeMessage();
+        //todo:开启子线程，不断询问messageConsunmer的队列，然后通过socket发到7000端口
 
         MessageProducer producer=new MessageProducer();
 

@@ -6,7 +6,13 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import preprocessor.DataModelPreprocessor;
+import preprocessor.Preprocessor;
 
+import javax.xml.crypto.Data;
+import java.io.IOException;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.*;
 
 /**
@@ -23,6 +29,9 @@ public class MessageConsumer {
     private boolean isOn=false; //consumer status
 
     private Thread t; //consumer thread
+
+    //数据预处理器
+    private Preprocessor preprocessor;
 
     //output
     Queue<DataModel> outputQueue=new LinkedList<>();
@@ -60,7 +69,8 @@ public class MessageConsumer {
                         for (ConsumerRecord<String, DataModel> record : records){
                             //System.out.printf("offset = %d, key = %s, value = %s", record.offset(), record.key(), record.value());
                             System.out.println(record.value().toString());
-                            that.outputQueue.offer(record.value());
+                            //that.outputQueue.offer(record.value());
+                            that.sendMessage(record.value());
                         }
                     }
                 }else{
@@ -73,7 +83,8 @@ public class MessageConsumer {
                         if (buffer.size() >= minBatchSize) {
                             System.out.println("cache full");
                             for(ConsumerRecord<String,DataModel> record:buffer){
-                                that.outputQueue.add(record.value());
+                                //that.outputQueue.add(record.value());
+                                that.sendMessage(record.value());
                             }
                             consumer.commitSync();
                             buffer.clear();
@@ -105,6 +116,19 @@ public class MessageConsumer {
 
     public int getMessageRemainsNum(){
         return this.outputQueue.size();
+    }
+
+    public void sendMessage(DataModel dataModel){
+        //DataModelPreprocessor,可能还有其它处理器
+        preprocessor = new DataModelPreprocessor();
+        String message = preprocessor.preprocess(dataModel);
+        try {
+            Socket client = new Socket("127.0.0.1", 7000);
+            client.getOutputStream().write(message.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
 
