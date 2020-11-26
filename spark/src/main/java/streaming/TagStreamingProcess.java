@@ -1,11 +1,12 @@
 package streaming;
 
+import config.GoEasyConfig;
 import config.SparkConfig;
+import io.goeasy.GoEasy;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.function.FlatMapFunction;
-import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.function.*;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
@@ -44,7 +45,6 @@ public class TagStreamingProcess extends StreamingProcess implements Serializabl
 
 
     void process() throws InterruptedException {
-        GoEasyServer goEasyServer = new GoEasyServer();
         JavaReceiverInputDStream<String> stream=this.getStream();
         JavaStreamingContext jsc=this.getContext();
 
@@ -68,22 +68,37 @@ public class TagStreamingProcess extends StreamingProcess implements Serializabl
             }
         });
 
-        final String[] result = {""};
-        entries.map(new Function<Tuple2<String, Integer>, Object>() {
-            public Object call(Tuple2<String, Integer> stringIntegerTuple2) throws Exception {
-                if(result[0].length()!=0){result[0]+=" ";}
-                result[0] +=stringIntegerTuple2._1+":"+stringIntegerTuple2._2;
-                return stringIntegerTuple2;
+        JavaDStream<String> result=entries.map(new Function<Tuple2<String, Integer>, String>() {
+            @Override
+            public String call(Tuple2<String, Integer> stringIntegerTuple2) throws Exception {
+                return stringIntegerTuple2._1()+":"+stringIntegerTuple2._2();
             }
         });
 
-        entries.print();
-        //socket客户端向服务端发送数据
-        String msg = "send message to vue";
-        System.out.println(msg);
-        //goEasy发送数据
-        goEasyServer.sendMessage(result[0]);
+        result.foreachRDD(new VoidFunction<JavaRDD<String>>() {
+            @Override
+            public void call(JavaRDD<String> stringJavaRDD) throws Exception {
+                stringJavaRDD.foreach(new VoidFunction<String>() {
+                    @Override
+                    public void call(String s) throws Exception {
+                        GoEasyServer server=new GoEasyServer();
+                        server.sendMessage(s);
+                    }
+                });
+
+            }
+        });
+
+        result.print();
         jsc.start();
-        jsc.awaitTerminationOrTimeout(20*1000L);
+        jsc.awaitTerminationOrTimeout(600*1000L);
+    }
+
+    public static void main(String[] args) {
+        try {
+            new TagStreamingProcess().process();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
