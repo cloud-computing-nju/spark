@@ -1,10 +1,7 @@
 package streaming;
 
-import config.GoEasyConfig;
 import config.SparkConfig;
-import io.goeasy.GoEasy;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.*;
 import org.apache.spark.streaming.Durations;
@@ -93,12 +90,12 @@ public class TagStreamingProcess extends StreamingProcess implements Serializabl
         jsc.start();
         jsc.awaitTerminationOrTimeout(600*1000L);
     }
-
-    public static void main(String[] args) {
-        try {
-            new TagStreamingProcess().process();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
+//
+//    public static void main(String[] args) {
+//        try {
+//            new TagStreamingProcess().process();
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//    }
 }
