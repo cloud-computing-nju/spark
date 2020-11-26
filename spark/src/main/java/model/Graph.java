@@ -1,7 +1,5 @@
 package model;
 
-import org.apache.xerces.impl.xs.SchemaSymbols;
-
 import java.util.ArrayList;
 import java.util.List;
 
