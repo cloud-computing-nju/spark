@@ -6,7 +6,7 @@
         nameKey="name"
         valueKey="value"
         :color="myColors"
-        :showTooltip="false"
+        :showTooltip="true"
         :wordClick="wordClickHandler">
       </wordcloud>
     </div>
