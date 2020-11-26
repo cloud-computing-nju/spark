@@ -17,7 +17,7 @@ let goEasy = new GoEasy({
   }
 });
 
-export function bindPort(p){
+export function bindPort(){
     goEasy.subscribe({
     channel: "my_channel", //替换为您自己的channel
     onMessage: function (message) {

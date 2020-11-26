@@ -72,23 +72,40 @@ public class GraphStreamingProcess extends StreamingProcess{
 
     private void saveGraph(Graph g,int index,String[] colors){
         String[] names=g.nodesName;
+        List<String> c=new ArrayList<String>(Arrays.asList(colors));
+
+        for(String n:names){
+            if(c.contains(n)){
+                Connection conn = null;
+                try {
+                    conn = DbHelper.getConnection();
+                    String sql="INSERT INTO nodes VALUES (%s,%s,%s)";
+                    String[] params=new String[]{};
+                    DbHelper.callProc(conn,String.format(sql,"",n,"group"+(c.contains(n)?"1":"0")),params);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }
+
         float[][] m=g.getMatrix();
         int size=m.length;
-        List<String> c=new ArrayList<String>(Arrays.asList(colors));
+
         for(int i=0;i<size-1;i+=1){
             String name1=names[i];
             for(int j=i+1;j<size;j+=1){
                 String name2=names[j];
                 if(m[i][j]>0){
-                    int isColored=0;
-                    if(c.contains(name1)&&c.contains(name2)){
-                        isColored=1;
-                    }
                     try {
                         Connection conn=DbHelper.getConnection();
-                        String sql="insert into ?(id,fn,sn,weight,color) VALUES(?,?,?,?,?)";
-                        String[] params=new String[]{"tablename",name1,name2, String.valueOf(m[i][j]), String.valueOf(isColored)};
-                        DbHelper.callProc(conn,sql,params);
+                        String sql="insert into links VALUES(%s,%s,%s)";
+                        String[] params=new String[]{};
+                        DbHelper.callProc(conn,String.format(sql,name1,name2, m[i][j]),params);
                     } catch (IOException e) {
                         e.printStackTrace();
                     } catch (ClassNotFoundException e) {
@@ -104,10 +121,10 @@ public class GraphStreamingProcess extends StreamingProcess{
     public static void main(String[] args) {
         Connection conn= null;
         try {
-            conn = DbHelper.getConnection();
-            String sql="insert into ?(id,fn,sn,weight,color) VALUES(?,?,?,?,?)";
-            String[] params=new String[]{"graph","node1","node2", "3", "1"};
-            DbHelper.callProc(conn,sql,params);
+            conn=DbHelper.getConnection();
+            String sql="INSERT INTO links VALUES (%s,%s,%s)";
+            String[] params=new String[]{};
+            DbHelper.callProc(conn,String.format(sql,"1","1","2"),params);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {

@@ -1,7 +1,6 @@
 package streaming;
 
 import config.SparkConfig;
-import model.Graph;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
@@ -15,7 +14,6 @@ import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import scala.Serializable;
 import scala.Tuple2;
 import socket.GoEasyServer;
-import socket.SocketServer;
 
 import java.util.Arrays;
 import java.util.Iterator;

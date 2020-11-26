@@ -11,8 +11,9 @@ const store=new Vuex.Store({
       let hasOrNot=false;
       let d;
       for(d in state.wordCount){
-        if(d['name']===data['name']){
-          d['value']+=data['value']
+        console.log()
+        if(state.wordCount[d]['name']===data['name']){
+          state.wordCount[d]['value']=Number(state.wordCount[d]['value'])+Number(data['value'])
           hasOrNot=true
           break
         }

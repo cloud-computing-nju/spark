@@ -29,7 +29,7 @@ export default {
   },
   mounted() {
     console.log("mounted")
-    bindPort(20000)
+    bindPort()
     bus.$on('read',()=>{
       //更新数据
       console.log(this.$store.state.wordCount)
