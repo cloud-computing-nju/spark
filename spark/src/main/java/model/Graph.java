@@ -132,7 +132,7 @@ public class Graph {
      * @param node2
      * @return
      */
-    public float minDistance(final int node1,final int node2) {
+    public float minDistance(final int node1,final int node2,float border) {
         if(node1==node2){return 0;}
 
         //到其他顶点的距离
@@ -162,6 +162,8 @@ public class Graph {
             if(nodeSelected<0){break;}
 
             knownDots.add(nodeSelected);
+            //当路径长度超过阈值的时候直接返回无穷大
+            if(shortest>border){return Float.MAX_VALUE;}
             distanceVector[nodeSelected] = shortest;
             if (nodeSelected == node2) break;
 
@@ -255,12 +257,12 @@ public class Graph {
         for(int i=0;i<subMatrix1.length;i++){
             for(int j=i;j<subMatrix1.length;j++){
                 subMatrix[i][j]=subMatrix[j][i]=this.matrix[nodes[i]][nodes[j]];
-                subMatrix1[i][j]=subMatrix1[j][i]=graphCpy.minDistance(nodes[i],nodes[j]);
+                subMatrix1[i][j]=subMatrix1[j][i]=graphCpy.minDistance(nodes[i],nodes[j],this.matrix[nodes[i]][nodes[j]]);
                 subMatrix2[i][j]=subMatrix2[j][i]= Math.min(subMatrix[i][j], subMatrix1[i][j]);
             }
         }
 
-        return new Graph(subMatrix2).getMinSpanningTreeSum();
+        return new Graph(subMatrix2).getMinSpanningTreeSum()/nodes.length;
     }
 
     private static void fill(float value,float[][] matrix){

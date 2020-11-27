@@ -40,7 +40,8 @@ public class test {
 //        graphMapper.insertEdge("b", "a",2);
 //        graphMapper.setEdge("b","a",4);
 //        System.out.println(graphMapper.hasNode("c"));
-        System.out.println(graphMapper.hasEdge("a","b"));
+        graphMapper.insertNode("node1");
+        graphMapper.updateNodeGroup("node1","group1");
         sqlSession.commit();
     }
 

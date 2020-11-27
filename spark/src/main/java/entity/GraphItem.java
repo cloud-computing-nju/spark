@@ -73,4 +73,8 @@ public class GraphItem {
     public void setValue(float value) {
         this.value = value;
     }
+
+    public boolean isNode(){
+        return id==1;
+    }
 }

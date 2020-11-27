@@ -5,9 +5,13 @@
 		select count(*) from data where id_ = 1 and name=#{nodeName}
 	</select>
 	<insert id="insertNode" >
-		 insert into data(name,id_)
-        values(#{nodeName},1)
+		 insert into data(name,id_,type)
+        values(#{nodeName},1,'group0')
 	</insert>
+	<update id="updateNodeGroup">
+		update data set type=#{groupName}
+		where id_=1 and name=#{nodeName}
+	</update>
 	<select id="hasEdge" resultType="java.lang.Boolean">
 		select count(*) from data where source=#{source} and id_=2 and target=#{target}
 	</select>
