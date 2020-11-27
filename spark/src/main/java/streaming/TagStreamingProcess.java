@@ -90,12 +90,12 @@ public class TagStreamingProcess extends StreamingProcess implements Serializabl
         jsc.start();
         jsc.awaitTerminationOrTimeout(600*1000L);
     }
-//
-//    public static void main(String[] args) {
-//        try {
-//            new TagStreamingProcess().process();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//    }
+
+    public static void main(String[] args) {
+        try {
+            new TagStreamingProcess().process();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 }
