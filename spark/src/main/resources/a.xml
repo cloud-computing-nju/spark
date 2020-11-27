@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="mapper.GraphMapper">
+    <select id="hasNode" resultType="java.lang.Boolean">
+		select count(*) from data where id_ = 1 and name=#{nodeName}
+	</select>
+	<insert id="insertNode" >
+		 insert into data(name,id_)
+        values(#{nodeName},1)
+	</insert>
+	<select id="hasEdge" resultType="java.lang.Boolean">
+		select count(*) from data where source=#{source} and id_=2 and target=#{target}
+	</select>
+	<insert id="insertEdge">
+		insert into data(source,target,value,id_)
+        values(#{source},#{target},#{value},2)
+	</insert>
+	<update id="setEdge">
+		update data set value=#{value}
+		where source=#{source} and target=#{target} and id_=2
+	</update>
+	<update id="updateEdge">
+		update data set value=#{value}
+		where source=#{source} and target=#{target} and id_=2
+	</update>
+	<select id="selectAll" resultMap="graph">
+		select * from data
+	</select>
+
+	<resultMap id="graph" type="entity.GraphItem">
+		<id column="id" property="tableid"></id>
+		<result column="id_" property="id"></result>
+		<result column="imgPath" property="imgPath"></result>
+		<result column="name" property="name"></result>
+		<result column="type" property="type"></result>
+		<result column="source" property="source"></result>
+		<result column="target" property="target"></result>
+		<result column="value" property="value"></result>
+	</resultMap>
+</mapper>
+
