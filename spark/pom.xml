@@ -28,7 +28,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>streaming.TagStreamingProcess</mainClass>
+                            <mainClass>streaming.GraphStreamingProcess</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
