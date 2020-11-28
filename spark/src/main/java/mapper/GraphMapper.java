@@ -2,10 +2,12 @@ package mapper;
 
 import entity.GraphItem;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.session.SqlSession;
 
 import java.util.List;
 
 public interface GraphMapper {
+    public SqlSession sqlSession=null;
     public boolean hasNode(@Param("nodeName") String nodeName);
     public void insertNode(@Param("nodeName") String nodeName);
     public void updateNodeGroup(@Param("nodeName")String nodeName,@Param("groupName")String groupName);

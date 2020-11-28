@@ -2,6 +2,7 @@ package streaming;
 
 import config.SparkConfig;
 import entity.GraphItem;
+import mapper.DBHelper;
 import mapper.GraphMapper;
 import model.Graph;
 import org.apache.ibatis.io.Resources;
@@ -10,6 +11,7 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.VoidFunction;
@@ -24,66 +26,49 @@ import java.io.Serializable;
 import java.util.*;
 
 public class GraphStreamingProcess extends StreamingProcess implements Serializable {
-
-    private static SparkConf initConf(){
-        return new SparkConf().setMaster("local[2]").setAppName(SparkConfig.APP_NAME);
-    }
-
-    private static JavaStreamingContext initStreamingContext(SparkConf conf){
-        return new JavaStreamingContext(conf, Durations.seconds(SparkConfig.INTERVAL_SEC));
-    }
-
-    private static JavaReceiverInputDStream<String> initDStream(JavaStreamingContext jsc){
-        return jsc.socketTextStream(SparkConfig.MASTER_HOSTNAME,SparkConfig.MASTER_SPARK_GRAPH_PORT);
-    }
-
+    
     public GraphStreamingProcess(){
-        JavaStreamingContext context=initStreamingContext(initConf());
-        this.setContext(context);
-        this.setStream(initDStream(context));
+
     }
 
     void process() throws InterruptedException {
-        final JavaReceiverInputDStream<String> stream=this.getStream();
+        SparkConf sparkConf = new SparkConf().setAppName("mysqlJdbc").setMaster("local[2]");
+        // spark应用的上下对象
+        JavaSparkContext sc = new JavaSparkContext(sparkConf);
+        JavaRDD<String> lines = sc.textFile("E:/test.txt");
         JavaStreamingContext jsc=this.getContext();
         final List<String[]> graphList=new ArrayList<String[]>();
 
+        final DBHelper helper=new DBHelper();
+        helper.saveNode("node3");
 
-        stream.foreachRDD(new VoidFunction<JavaRDD<String>>() {
+        lines.foreachAsync(new VoidFunction<String>() {
             @Override
-            public void call(JavaRDD<String> stringJavaRDD) throws Exception {
-                stringJavaRDD.foreach(new VoidFunction<String>() {
-                    @Override
-                    public void call(String s) throws Exception {
-                        GraphMapper graphMapper=getMapper();
-                        String[] split = s.trim().split(" ");
-                        graphList.add(split);
-
-                        for(String n:split){
-                            saveNode(n,graphMapper);
-                        }
-
-                        for(int i=0;i<split.length-1;i+=1){
-                            for(int j=i+1;j<split.length;j+=1){
-                                saveEdge(split[i],split[j],1,graphMapper);
-                            }
-                        }
-
-                    }
-                });
-
+            public void call(String s) throws Exception {
+                String[] split = s.trim().split(" ");
+                graphList.add(split);
             }
         });
 
+        System.out.println(graphList.size());
 
-        jsc.start();
-        jsc.awaitTerminationOrTimeout(600*1000L);
-        jsc.stop();
+        for(String[] ss:graphList){
+            for(String s:ss){
+                helper.saveNode(s);
+            }
+        }
+
+        for(String[] ss:graphList){
+            for(int i=0;i<ss.length-1;i+=1){
+                for(int j=i+1;j<ss.length;j+=1){
+                    helper.saveEdge(ss[i],ss[j],1);
+                }
+            }
+        }
 
         //接下来对顶点进行染色
         float BORDER=3;
-        GraphMapper graphMapper=getMapper();
-        List<GraphItem> gis=graphMapper.selectAll();
+        List<GraphItem> gis=helper.selectAll();
         List<String> nodeNames=new ArrayList<String>();
         for(GraphItem gi:gis){
             if(gi.isNode()&&!nodeNames.contains(gi.getName())){
@@ -114,49 +99,13 @@ public class GraphStreamingProcess extends StreamingProcess implements Serializa
             if(result<BORDER){
                 //需要染色
                 for(String n:ns){
-                    graphMapper.updateNodeGroup(n,"group1");
+                    helper.updateNodeGroup(n,"group1");
                 }
             }
         }
 
     }
 
-    private void saveNode(String s,GraphMapper graphMapper){
-        if(!graphMapper.hasNode(s))
-            graphMapper.insertNode(s);
-    }
-
-    private GraphMapper getMapper(){
-        String resource = "MapperConfig.xml";
-        InputStream inputStream = null;
-
-        {
-            try {
-                inputStream = Resources.getResourceAsStream(resource);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        //1、创建SqlSessionFactory
-        SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
-        //2、获取sqlSession
-        SqlSession sqlSession = sqlSessionFactory.openSession();
-        //3、获取mapper
-        GraphMapper graphMapper = sqlSession.getMapper(GraphMapper.class);
-        return graphMapper;
-
-    }
-
-    private void saveEdge(String start,String end,float weight,GraphMapper graphMapper){
-        if(graphMapper.hasEdge(start,end)){
-            graphMapper.updateEdge(start,end,weight);
-        }else if(graphMapper.hasEdge(end,start)){
-            graphMapper.updateEdge(end,start,weight);
-        }else{
-            graphMapper.insertEdge(start,end,weight);
-        }
-    }
 
     public static void main(String[] args) {
         try {

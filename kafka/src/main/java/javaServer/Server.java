@@ -81,7 +81,7 @@ public class Server {
             ServerSocket serverSocket=new ServerSocket(ServerConfig.PORT);
             while(true){
                 Socket clientSocket=serverSocket.accept();
-                if(clientSocket==null||clientSocket.isClosed()||isServerClose(clientSocket)){
+                if(clientSocket==null||clientSocket.isClosed()){
                     clientSocket=serverSocket.accept();
                 }
                 StringBuilder requestDataBuilder= new StringBuilder();
