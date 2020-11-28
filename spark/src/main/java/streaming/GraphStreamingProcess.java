@@ -11,7 +11,6 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.VoidFunction;
@@ -26,86 +25,99 @@ import java.io.Serializable;
 import java.util.*;
 
 public class GraphStreamingProcess extends StreamingProcess implements Serializable {
-    
-    public GraphStreamingProcess(){
 
+    private static SparkConf initConf(){
+        return new SparkConf().setMaster("local[2]").setAppName(SparkConfig.APP_NAME);
+    }
+
+    private static JavaStreamingContext initStreamingContext(SparkConf conf){
+        return new JavaStreamingContext(conf, Durations.seconds(SparkConfig.INTERVAL_SEC));
+    }
+
+    private static JavaReceiverInputDStream<String> initDStream(JavaStreamingContext jsc){
+        return jsc.socketTextStream(SparkConfig.MASTER_HOSTNAME,SparkConfig.MASTER_SPARK_GRAPH_PORT);
+    }
+
+    public GraphStreamingProcess(){
+        JavaStreamingContext context=initStreamingContext(initConf());
+        this.setContext(context);
+        this.setStream(initDStream(context));
     }
 
     void process() throws InterruptedException {
-        SparkConf sparkConf = new SparkConf().setAppName("mysqlJdbc").setMaster("local[2]");
-        // spark应用的上下对象
-        JavaSparkContext sc = new JavaSparkContext(sparkConf);
-        JavaRDD<String> lines = sc.textFile("E:/test.txt");
+        final JavaReceiverInputDStream<String> stream=this.getStream();
         JavaStreamingContext jsc=this.getContext();
-        final List<String[]> graphList=new ArrayList<String[]>();
 
-        final DBHelper helper=new DBHelper();
-        helper.saveNode("node3");
 
-        lines.foreachAsync(new VoidFunction<String>() {
+        stream.foreachRDD(new VoidFunction<JavaRDD<String>>() {
             @Override
-            public void call(String s) throws Exception {
-                String[] split = s.trim().split(" ");
-                graphList.add(split);
+            public void call(JavaRDD<String> stringJavaRDD) throws Exception {
+                stringJavaRDD.foreach(new VoidFunction<String>() {
+                    @Override
+                    public void call(String s) throws Exception {
+                        DBHelper helper=new DBHelper();
+                        String[] split = s.trim().split(" ");
+
+                        for(String n:split){
+                            helper.saveNode(n);
+                        }
+
+                        for(int i=0;i<split.length-1;i+=1){
+                            for(int j=i+1;j<split.length;j+=1){
+                                helper.saveEdge(split[i],split[j],1);
+                            }
+                        }
+
+                        //接下来对顶点进行染色
+                        float BORDER=3;
+                        int NODE_BORDER=100;
+                        List<GraphItem> gis=helper.selectAll();
+                        List<String> nodeNames=new ArrayList<String>();
+                        for(GraphItem gi:gis){
+                            if(gi.isNode()&&!nodeNames.contains(gi.getName())){
+                                nodeNames.add(gi.getName());
+                            }
+                        }
+                        if(nodeNames.size()>=NODE_BORDER){
+                            Graph graph=new Graph(nodeNames.size());
+                            String[] nodeNamesStr=new String[nodeNames.size()];
+                            for(int i=0;i<nodeNames.size();i+=1){
+                                nodeNamesStr[i]=nodeNames.get(i);
+                            }
+                            graph.nodesName=nodeNamesStr;
+
+                            for(GraphItem gi:gis){
+                                if(!gi.isNode()){
+                                    graph.addEdge(nodeNames.indexOf(gi.getSource()),nodeNames.indexOf(gi.getTarget()),gi.getValue());
+                                }
+                            }
+
+                            graph.unify();
+
+                            int[] ins=new int[split.length];
+                            for(int i=0;i<ins.length;i+=1){
+                                ins[i]=nodeNames.indexOf(split[i]);
+                            }
+                            float result=graph.findMinSubGraphCoverNodes(ins);
+                            if(result<BORDER){
+                                //需要染色
+                                for(String n:split){
+                                    helper.updateNodeGroup(n,"group1");
+                                }
+                            }
+
+                        }
+
+                    }
+                });
+
             }
         });
 
-        System.out.println(graphList.size());
 
-        for(String[] ss:graphList){
-            for(String s:ss){
-                helper.saveNode(s);
-            }
-        }
-
-        for(String[] ss:graphList){
-            for(int i=0;i<ss.length-1;i+=1){
-                for(int j=i+1;j<ss.length;j+=1){
-                    helper.saveEdge(ss[i],ss[j],1);
-                }
-            }
-        }
-
-        //接下来对顶点进行染色
-        float BORDER=3;
-        int NODE_BORDER=100;
-        List<GraphItem> gis=helper.selectAll();
-        if(NODE_BORDER<=gis.size()) {
-            List<String> nodeNames = new ArrayList<String>();
-            for (GraphItem gi : gis) {
-                if (gi.isNode() && !nodeNames.contains(gi.getName())) {
-                    nodeNames.add(gi.getName());
-                }
-            }
-            Graph graph = new Graph(nodeNames.size());
-            String[] nodeNamesStr = new String[nodeNames.size()];
-            for (int i = 0; i < nodeNames.size(); i += 1) {
-                nodeNamesStr[i] = nodeNames.get(i);
-            }
-            graph.nodesName = nodeNamesStr;
-
-            for (GraphItem gi : gis) {
-                if (!gi.isNode()) {
-                    graph.addEdge(nodeNames.indexOf(gi.getSource()), nodeNames.indexOf(gi.getTarget()), gi.getValue());
-                }
-            }
-
-            graph.unify();
-
-            for (String[] ns : graphList) {
-                int[] ins = new int[ns.length];
-                for (int i = 0; i < ins.length; i += 1) {
-                    ins[i] = nodeNames.indexOf(ns[i]);
-                }
-                float result = graph.findMinSubGraphCoverNodes(ins);
-                if (result < BORDER) {
-                    //需要染色
-                    for (String n : ns) {
-                        helper.updateNodeGroup(n, "group1");
-                    }
-                }
-            }
-        }
+        jsc.start();
+        jsc.awaitTerminationOrTimeout(600*1000L);
+        jsc.stop();
 
     }
 
