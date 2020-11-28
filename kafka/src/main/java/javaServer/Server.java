@@ -54,7 +54,9 @@ public class Server {
                     if(messageConsumer.getMessageRemainsNum()>0){
                         System.out.println("send");
                         assert client != null;
-                        messageConsumer.sendMessage(messageConsumer.pollMessageFromQueue(),client);
+                        DataModel s=messageConsumer.pollMessageFromQueue();
+                        System.out.println(s.toString());
+                        messageConsumer.sendMessage(s,client);
                     }
                 }
             }
