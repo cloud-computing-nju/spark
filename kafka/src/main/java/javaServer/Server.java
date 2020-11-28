@@ -17,6 +17,19 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
 public class Server {
+    /**
+     * 判断是否断开连接，断开返回true,没有返回false
+     * @param socket
+     * @return
+     */
+    private static Boolean isServerClose(Socket socket) {
+        try {
+            socket.sendUrgentData(0xFF);//发送1个字节的紧急数据，默认情况下，服务器端没有开启紧急数据处理，不影响正常通信
+            return false;
+        } catch (Exception se) {
+            return true;
+        }
+    }
     public static void main(String[] args) {
         String topic="bilibili";
         MessageConsumer messageConsumer=new MessageConsumer();
@@ -45,7 +58,7 @@ public class Server {
                 while (true){
 
                     try {
-                        if(client==null||client.isClosed()) {client=s.accept();
+                        if(client==null||client.isClosed()||isServerClose(client)) {client=s.accept();
                         //System.out.println("connect to spark");
                         }
                     } catch (IOException e) {
@@ -68,6 +81,9 @@ public class Server {
             ServerSocket serverSocket=new ServerSocket(ServerConfig.PORT);
             while(true){
                 Socket clientSocket=serverSocket.accept();
+                if(clientSocket==null||clientSocket.isClosed()||isServerClose(clientSocket)){
+                    clientSocket=serverSocket.accept();
+                }
                 StringBuilder requestDataBuilder= new StringBuilder();
                 byte[] bytes=new byte[1024];
                 int len;
@@ -92,7 +108,6 @@ public class Server {
             e.printStackTrace();
         }
     }
-
 
 
 }
