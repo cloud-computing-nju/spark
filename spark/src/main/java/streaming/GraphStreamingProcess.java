@@ -68,38 +68,41 @@ public class GraphStreamingProcess extends StreamingProcess implements Serializa
 
         //接下来对顶点进行染色
         float BORDER=3;
+        int NODE_BORDER=100;
         List<GraphItem> gis=helper.selectAll();
-        List<String> nodeNames=new ArrayList<String>();
-        for(GraphItem gi:gis){
-            if(gi.isNode()&&!nodeNames.contains(gi.getName())){
-                nodeNames.add(gi.getName());
+        if(NODE_BORDER<=gis.size()) {
+            List<String> nodeNames = new ArrayList<String>();
+            for (GraphItem gi : gis) {
+                if (gi.isNode() && !nodeNames.contains(gi.getName())) {
+                    nodeNames.add(gi.getName());
+                }
             }
-        }
-        Graph graph=new Graph(nodeNames.size());
-        String[] nodeNamesStr=new String[nodeNames.size()];
-        for(int i=0;i<nodeNames.size();i+=1){
-            nodeNamesStr[i]=nodeNames.get(i);
-        }
-        graph.nodesName=nodeNamesStr;
+            Graph graph = new Graph(nodeNames.size());
+            String[] nodeNamesStr = new String[nodeNames.size()];
+            for (int i = 0; i < nodeNames.size(); i += 1) {
+                nodeNamesStr[i] = nodeNames.get(i);
+            }
+            graph.nodesName = nodeNamesStr;
 
-        for(GraphItem gi:gis){
-            if(!gi.isNode()){
-                graph.addEdge(nodeNames.indexOf(gi.getSource()),nodeNames.indexOf(gi.getTarget()),gi.getValue());
+            for (GraphItem gi : gis) {
+                if (!gi.isNode()) {
+                    graph.addEdge(nodeNames.indexOf(gi.getSource()), nodeNames.indexOf(gi.getTarget()), gi.getValue());
+                }
             }
-        }
-        
-        graph.unify();
 
-        for(String[] ns:graphList){
-            int[] ins=new int[ns.length];
-            for(int i=0;i<ins.length;i+=1){
-                ins[i]=nodeNames.indexOf(ns[i]);
-            }
-            float result=graph.findMinSubGraphCoverNodes(ins);
-            if(result<BORDER){
-                //需要染色
-                for(String n:ns){
-                    helper.updateNodeGroup(n,"group1");
+            graph.unify();
+
+            for (String[] ns : graphList) {
+                int[] ins = new int[ns.length];
+                for (int i = 0; i < ins.length; i += 1) {
+                    ins[i] = nodeNames.indexOf(ns[i]);
+                }
+                float result = graph.findMinSubGraphCoverNodes(ins);
+                if (result < BORDER) {
+                    //需要染色
+                    for (String n : ns) {
+                        helper.updateNodeGroup(n, "group1");
+                    }
                 }
             }
         }
